@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Algoplay — Teacher Dashboard</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+
+<style>
+body{
+  margin:0;
+  background:linear-gradient(135deg,#1a103d,#0b0826);
+  font-family:Inter,sans-serif;
+  color:white;
+}
+.container{padding:30px}
+
+.stats{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:20px;
+}
+.card{
+  background:rgba(255,255,255,.06);
+  padding:22px;
+  border-radius:16px;
+  box-shadow:0 12px 30px rgba(0,0,0,.4);
+}
+.number{
+  font-size:2.8rem;
+  font-weight:900;
+  background:linear-gradient(90deg,#a78bfa,#60a5fa);
+  -webkit-background-clip:text;
+  color:transparent;
+}
+.section{
+  margin-top:30px;
+  background:rgba(255,255,255,.06);
+  padding:24px;
+  border-radius:16px;
+}
+canvas{margin-top:20px}
+table{width:100%;margin-top:18px;border-collapse:collapse}
+td,th{padding:12px}
+thead{background:rgba(255,255,255,.08)}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+<h1>👨‍🏫 Teacher Dashboard</h1>
+
+<div class="stats">
+  <div class="card">
+    <div class="number" id="total">0</div>
+    Total Students
+  </div>
+  <div class="card">
+    <div class="number" id="active">0</div>
+    Active Today
+  </div>
+  <div class="card">
+    <div class="number" id="completed">0</div>
+    <a href="resources.html">Upload Assignments</a>
+</div>
+</div>
+
+<div class="section">
+  <h2>📊 Subject Performance</h2>
+  <canvas id="subjectChart"></canvas>
+</div>
+
+<div class="section">
+  <h2>📈 Student Progress Distribution</h2>
+  <canvas id="progressChart"></canvas>
+</div>
+
+<div class="section">
+  <h2>📋 Students</h2>
+  <table>
+    <thead>
+      <tr><th>Name</th><th>Grade</th><th>Progress</th><th>Hours</th></tr>
+    </thead>
+    <tbody id="studentTable"></tbody>
+  </table>
+</div>
+
+</div>
+<script>
+const teacherEmail = sessionStorage.getItem("logged_in_email");
+const teacherName  = sessionStorage.getItem("logged_in_name");
+const teacherSchool = sessionStorage.getItem("logged_in_school");
+
+
+console.log("DASHBOARD SESSION:", teacherEmail, teacherSchool);
+
+if (!teacherEmail || !teacherSchool) {
+    alert("Session expired. Please login again.");
+    window.location.href = "teacherlogin.html";
+}
+
+/* 🔥 FETCH DASHBOARD DATA */
+fetch(`http://localhost:5000/teacher/dashboard?email=${encodeURIComponent(teacherEmail)}`)
+  .then(res => res.json())
+  .then(data => {
+    console.log("Dashboard data:", data);
+
+    // Stats
+    document.getElementById("total").innerText = data.stats.total_students;
+    document.getElementById("active").innerText = data.stats.active_students;
+
+    // Students table
+    const tbody = document.getElementById("studentTable");
+    tbody.innerHTML = "";
+
+    data.students.forEach(s => {
+      tbody.innerHTML += `
+        <tr>
+          <td>${s.name}</td>
+          <td>${s.classofstudy}</td>
+          <td>${s.score}</td>
+          <td>-</td>
+        </tr>
+      `;
+    });
+
+    // Progress chart
+    new Chart(document.getElementById("progressChart"), {
+      type: "doughnut",
+      data: {
+        labels: ["Excellent", "Average", "Needs Help"],
+        datasets: [{
+          data: [
+            data.progress_chart.excellent,
+            data.progress_chart.average,
+            data.progress_chart.needs_help
+          ],
+          backgroundColor: ["#34d399", "#fbbf24", "#f43f5e"]
+        }]
+      }
+    });
+  });
+</script>
+
+
+</body>
+</html>
